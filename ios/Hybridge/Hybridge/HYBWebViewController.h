@@ -10,6 +10,12 @@
 
 #import "HYBBridge.h"
 
+typedef NS_ENUM(NSUInteger, HYBHTTPError) {
+    HYBHTTPErrorForbidden = 403,
+    HYBHTTPErrorNotFound = 404,
+    HYBHTTPErrorServerError = 500,
+};
+
 /**
  A view controller that manages a web view and the bridge to communicate with it.
  */

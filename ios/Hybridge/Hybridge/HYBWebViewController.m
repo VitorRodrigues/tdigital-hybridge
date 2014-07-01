@@ -9,9 +9,11 @@
 #import "HYBWebViewController.h"
 #import "HYBBridge.h"
 
-@interface HYBWebViewController ()
+@interface HYBWebViewController () <NSURLConnectionDelegate>
 
 @property (strong, nonatomic) NSURL *URL;
+@property (strong, nonatomic) NSURL *requestedUrl;
+@property (nonatomic) BOOL validRequest;
 
 @end
 
@@ -67,8 +69,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    [self.webView loadRequest:[NSURLRequest requestWithURL:self.URL]];
+    if (self.URL){
+        [self.webView loadRequest:[NSURLRequest requestWithURL:self.URL]];
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -107,6 +110,33 @@
 
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error {
     [self webViewDidFailLoadWithError:error];
+}
+
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
+    self.requestedUrl = request.URL;
+    [NSURLConnection connectionWithRequest:request delegate:self];
+    return YES;
+}
+
+#pragma mark - NSURLConnectionDelegate
+
+//Since WebView handles invalid HTTP STATUS CODES as "OK", it doesn't call delegate errors
+//so we need to manually check for the statusCodes
+//
+// Reference: http://stackoverflow.com/questions/14451012/uiwebview-not-go-to-didfailloadwitherror-when-weblink-not-found
+//
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+{
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+    
+    if (httpResponse.statusCode < 200 || httpResponse.statusCode >= 300)
+    {
+        NSLog(@"%s request to %@ failed with statusCode=%@", __FUNCTION__, response.URL.absoluteString, @(httpResponse.statusCode));
+        [connection cancel];
+        [self.webView stopLoading];
+        [self webView:self.webView didFailLoadWithError:[NSError errorWithDomain:@"HTTP" code:httpResponse.statusCode userInfo:@{ @"URL" : response.URL.absoluteString }]];
+    }
+    
 }
 
 #pragma mark - HYBBridgeDelegate
