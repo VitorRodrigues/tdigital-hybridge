@@ -131,7 +131,6 @@
     
     if (httpResponse.statusCode < 200 || httpResponse.statusCode >= 300)
     {
-        NSLog(@"%s request to %@ failed with statusCode=%@", __FUNCTION__, response.URL.absoluteString, @(httpResponse.statusCode));
         [connection cancel];
         [self.webView stopLoading];
         [self webView:self.webView didFailLoadWithError:[NSError errorWithDomain:@"HTTP" code:httpResponse.statusCode userInfo:@{ @"URL" : response.URL.absoluteString }]];
